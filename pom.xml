@@ -6,7 +6,7 @@
 
 	<groupId>17330a69-5fb7-45a4-809f-2b2b0ec9bbee</groupId>
 	<artifactId>find-cheap-booze</artifactId>
-	<version>1.0.2</version>
+	<version>1.0.3</version>
 	<packaging>mule-application</packaging>
 
 	<name>find-cheap-booze</name>
@@ -40,6 +40,8 @@
 						<muleVersion>4.4.0</muleVersion>
 						<server>anypoint-exchange-v3</server>
 						<applicationName>${project.name}</applicationName>
+						<username>${anypoint.username}</username>
+						<password>${anypoint.password}</password>
 						<replicas>4</replicas>
 						<vCores>0.1</vCores>
 						<deploymentSettings>
@@ -74,6 +76,16 @@
 	</dependencies>
 
 	<repositories>
+		<repository>
+			<id>sumitpshinde</id>
+			<url>https://pkgs.dev.azure.com/sumitpshinde/_packaging/sumitpshinde/maven/v1</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
 		<repository>
 			<id>anypoint-exchange-v3</id>
 			<name>Anypoint Exchange</name>
