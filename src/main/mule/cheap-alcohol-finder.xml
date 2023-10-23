@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
+    <http:listener-config name="HTTP_Listener_config1" doc:name="HTTP Listener config" doc:id="dc781baf-52fe-4067-915e-102df6c68b71" >
+		<http:listener-connection host="0.0.0.0" port="8081" >
+		</http:listener-connection>
+	</http:listener-config>
+	<flow name="get-homepage">
+		<http:listener doc:name="Listener" doc:id="5d5a2af7-7dc0-4857-8eda-e5f34bde9a0c" config-ref="HTTP_Listener_config1" path="/" allowedMethods="GET" />
+		<parse-template doc:name="Parse Template" doc:id="fd3c34f6-3469-478f-bc8d-8bc789e1417f" location="index.html" />
+    </flow>
+    <flow name="get-lcbo">
+		<http:listener doc:name="Listener" doc:id="ee9120be-0e93-4b23-a9e9-6dba15e51b8b" config-ref="HTTP_Listener_config1" path="/lcbo" allowedMethods="GET"/>
+		<flow-ref doc:name="get-lcbo-results-main" doc:id="4717264e-0af5-4569-a98a-c6d1efc8d0df" name="get-lcbo-results-main" />
+    </flow>
+    <flow name="get-lcbo-products-endpoint">
+		<http:listener doc:name="Listener" doc:id="89195c27-95ba-4802-ad03-92b9dc4cd79e" config-ref="HTTP_Listener_config1" path="/lcbo/products" allowedMethods="GET" />
+		<flow-ref doc:name="get-lcbo-products" doc:id="1589e8e1-c0ea-4864-a001-92ed6651aa08" name="get-lcbo-products" />
+    </flow>
+    <flow name="get-lcbo-stores-endpoint">
+		<http:listener doc:name="Listener" doc:id="684a93c6-9e3f-408f-9d8f-5e8d61121795" config-ref="HTTP_Listener_config1" path="/lcbo/stores" allowedMethods="GET" />
+		<flow-ref doc:name="get-lcbo-stores" doc:id="9c1519f1-e4c9-4a30-8bcc-36e76a2d9aab" name="get-lcbo-stores" />
+    </flow>
+    <flow name="get-thebeerstore">
+		<http:listener doc:name="Listener" doc:id="2ec03348-917b-4075-a995-de1c31628822" config-ref="HTTP_Listener_config1" path="/thebeerstore" allowedMethods="GET" />
+		<flow-ref doc:name="beerstore-main" doc:id="9ec7d36d-74d7-47cd-bae4-b6a6c159d367" name="beerstore-main" />
+    </flow>
+    <flow name="get-thebeerstore-stores">
+		<http:listener doc:name="Listener" doc:id="3605a19b-fb71-4135-91e0-3fa8f6f6b7b2" config-ref="HTTP_Listener_config1" path="/thebeerstore/stores" allowedMethods="GET" />
+		<flow-ref doc:name="get-beerstore-stores" doc:id="0d0429d9-6d00-4d5a-b912-d770b638e7c4" name="get-beerstore-stores" />
+    </flow>
+</mule>

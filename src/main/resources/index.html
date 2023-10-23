@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Find Cheap Booze Near You!</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<!-- Add DataTables CSS -->
+	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
+
+	<!-- Add jQuery -->
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+	<!-- Add DataTables JavaScript -->
+	<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+
+	<style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        form {
+            text-align: center;
+        }
+
+        /* Error label styles */
+        #errorLabel {
+            color: red;
+            display: none;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        /* Success label styles */
+        #successLabel {
+            color: green;
+            display: none;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        /* Table styles */
+        #productTable {
+            border-collapse: collapse;
+            width: 100%;
+            max-height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #ddd;
+        }
+
+        #productTable th,
+        #productTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        #productTable th {
+            background-color: #f2f2f2;
+        }
+
+        /* Make the table header sticky */
+        #productTable thead {
+            position: sticky;
+            top: 0;
+            background-color: #f2f2f2;
+        }
+
+        /* Responsive styles for smaller screens */
+        @media screen and (max-width: 600px) {
+            form {
+                text-align: left;
+            }
+
+            /* Adjust max height for smaller screens */
+            #productTable {
+                max-height: 200px;
+            }
+        }
+		
+		/* Loading spinner styles */
+		.spinner {
+			border: 4px solid rgba(0, 0, 0, 0.3);
+			border-top: 4px solid #007bff; /* You can change the spinner color here */
+			border-radius: 50%;
+			width: 30px;
+			height: 30px;
+			animation: spin 1s linear infinite;
+			margin: 0 auto;
+			margin-top: 20px;
+			display: none; /* Hidden by default */
+		}
+
+		/* Spinner animation keyframes */
+		@keyframes spin {
+			0% { transform: rotate(0deg); }
+			100% { transform: rotate(360deg); }
+		}
+    </style>
+</head>
+<body>
+    <h1>Find Cheap Booze Near You!</h1>
+
+    <form id="muleForm">
+		<label for="company">Company:</label>
+        <select id="company" name="company">
+            <option value="lcbo">LCBO</option>
+            <option value="thebeerstore">TheBeerStore</option>
+        </select><br><br>
+		
+        <label for="productType">Product Type (optional):</label>
+        <select id="productType" name="productType">
+            <option value="all" selected>All</option>
+        </select><br><br>
+        
+        <label for="storeID">Store</label>
+        <select id="storeID" name="storeID"></select><br><br>
+        
+        <label for="maxPrice">Maximum Price (optional):</label>
+        <input type="number" id="maxPrice" name="maxPrice" min="1" step="1"><br><br>
+        
+        <input type="submit" value="Submit">
+		
+		
+    </form>
+		<!-- Error label (hidden by default) -->
+		<div id="errorLabel" style="color: red; display: none;"></div>
+		
+		<!-- Success label (hidden by default) -->
+		<div id="successLabel"></div>
+		
+		<!-- Loading spinner (hidden by default) -->
+		<div id="loadingSpinner" class="spinner"></div>
+		
+		<!-- Table to display the API response (hidden by default) -->
+		<table id="productTable" class="display">
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Name</th>
+                <th>Volume</th>
+                <th>Percent</th>
+                <th>Price</th>
+                <th>Total Alcohol Content</th>
+                <th>Volume By Price</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+		
+		
+    <script>
+	
+		// Function to hide the success label after a specified duration (in milliseconds)
+		function hideSuccessLabel() {
+			setTimeout(function () {
+				successLabel.style.display = 'none';
+			}, 3000); // Hide after 3 seconds (adjust the duration as needed)
+		}
+		
+		// Function to show the loading spinner
+		function showLoadingSpinner() {
+			const loadingSpinner = document.getElementById('loadingSpinner');
+			loadingSpinner.style.display = 'block';
+		}
+
+		// Function to hide the loading spinner
+		function hideLoadingSpinner() {
+			const loadingSpinner = document.getElementById('loadingSpinner');
+			loadingSpinner.style.display = 'none';
+		}
+		
+		// Function to hide the table
+        function hideTable() {
+            const productTable = document.getElementById('productTable');
+            productTable.style.display = 'none';
+        }
+		
+		// Function to show the table
+        function showTable() {
+            const productTable = document.getElementById('productTable');
+            productTable.style.display = 'table';
+        }
+		
+		// Function to initialize DataTable
+		function initializeDataTable() {
+			$('#productTable').DataTable({
+				"order": [[6, "desc"]] // Default sorting by the sixth column (index 6) in descending order
+			});
+		}
+		
+		// Function to get user coordinates and store them securely
+        function getUserCoordinates() {
+                return new Promise((resolve, reject) => {
+                    if ("geolocation" in navigator) {
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                const { latitude, longitude } = position.coords;
+                                resolve({ latitude, longitude });
+                            },
+                            (error) => {
+                                reject(error);
+                            }
+                        );
+                    } else {
+                        reject("Geolocation is not supported by your browser.");
+                    }
+                });
+            
+        }
+		
+        // Function to populate the Product Type dropdown
+        function populateProductTypes() {
+            const productTypeDropdown = document.getElementById('productType');
+			const company = document.getElementById('company').value;
+			if (company === 'lcbo') {			
+				productTypeDropdown.innerHTML = ''; // Clear previous options
+				// Add the 'All' option by default
+				const allOption = document.createElement('option');
+				allOption.value = 'all';
+				allOption.textContent = 'All';
+				productTypeDropdown.appendChild(allOption);
+				
+				// Check if products are already stored in local storage
+				const storedProducts = localStorage.getItem(`${company}_products`);
+				if (storedProducts) {
+					const parsedProducts = JSON.parse(storedProducts);
+					// Use the stored products to populate the dropdown
+					populateProductTypesDropdown(productTypeDropdown, parsedProducts);
+					return;
+				}
+
+				const apiUrl = `/${company}/products`;
+				// Populate with other options from the JSON data (if LCBO is selected)
+				fetch(apiUrl)
+					.then(response => response.json())
+					.then(data => {
+						// Store fetched products in local storage
+						localStorage.setItem(`${company}_products`, JSON.stringify(data));
+						// Use the fetched products to populate the dropdown
+						populateProductTypesDropdown(productTypeDropdown, data);
+					})
+					.catch(error => {
+						console.error('Error fetching products:', error);
+					});
+            } else {
+                // Disable the dropdown if TheBeerStore is selected
+                productTypeDropdown.disabled = true;
+            }
+        }
+		
+		// Function to populate a dropdown with options
+		function populateDropdown(dropdown, options) {
+			options.forEach(store => {
+				const option = document.createElement('option');
+				option.value = store.id;
+				option.textContent = store.name;
+				dropdown.appendChild(option);
+			});
+		}
+		
+		// Function to populate a dropdown with options
+		function populateProductTypesDropdown(dropdown, options) {
+			options.forEach(product => {
+				const option = document.createElement('option');
+				option.value = product.id;
+				option.textContent = product.displayName;
+				dropdown.appendChild(option);
+			});
+		}
+
+        // Function to populate the Store dropdown
+        async function populateStores() {
+            const company = document.getElementById('company').value;
+			const storeDropdown = document.getElementById('storeID');
+			storeDropdown.innerHTML = ''; // Clear previous options
+			/*
+			const storedStores = localStorage.getItem(`${company}_stores`);
+			if (storedStores) {
+				const parsedStores = JSON.parse(storedStores);
+				// Use the stored stores to populate the dropdown
+				populateDropdown(storeDropdown, parsedStores);
+				return;
+			}
+			*/
+			
+			// Get user coordinates
+            let userCoordinates;
+			let defaultLatitude = '43.406067';
+			let defaultLongitude = '-80.401929';
+            try {
+                userCoordinates = await getUserCoordinates();
+            } catch (error) {
+                console.error("Error getting user coordinates:", error);
+                userCoordinates = { latitude: defaultLatitude, longitude: defaultLongitude };
+            }
+			
+			const apiUrl = `/${company}/stores?latitude=${userCoordinates.latitude}&longitude=${userCoordinates.longitude}`;
+			
+			fetch(apiUrl)
+				.then(response => response.json())
+				.then(data => {
+					// Store fetched stores in local storage
+					//localStorage.setItem(`${company}_stores`, JSON.stringify(data));
+					// Use the fetched stores to populate the dropdown
+					populateDropdown(storeDropdown, data);
+				})
+				.catch(error => {
+					console.error('Error fetching stores:', error);
+				});
+        }
+
+        // Call the functions to populate dropdowns when the page loads
+        window.addEventListener('load', function () {
+            populateProductTypes();
+            populateStores();
+        });
+		
+        document.getElementById('muleForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+			
+			// Hide the table when the form is submitted
+            hideTable();
+			
+			// Show the loading spinner when the form is submitted
+			showLoadingSpinner();
+			
+			const errorLabel = document.getElementById('errorLabel');
+            const productTable = document.getElementById('productTable');
+            const productType = document.getElementById('productType').value;
+            const storeID = document.getElementById('storeID').value;
+            const maxPrice = document.getElementById('maxPrice').value;
+			const company = document.getElementById('company').value;
+			
+            // Ensure maxPrice is a positive integer
+            if (maxPrice && !/^[1-9]\d*$/.test(maxPrice)) {
+                alert('Please enter a positive integer for Maximum Price.');
+                return;
+            }
+
+            // Construct the API URL with query parameters
+			var apiUrl = '';
+			if (company === 'lcbo') {
+				apiUrl = '/lcbo?';
+			}
+			else {
+				apiUrl = '/thebeerstore?';
+			}
+            if (productType) apiUrl += `product_id=${productType}`;
+            if (storeID) apiUrl += `&store_id=${storeID}`;
+            if (maxPrice) apiUrl += `&max_price=${maxPrice}`;
+
+            // Make the API call and handle the response
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('API request failed');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+					// Destroy the existing DataTable (if it exists)
+					if ($.fn.DataTable.isDataTable('#productTable')) {
+						$('#productTable').DataTable().destroy();
+					}
+				
+                    // Clear error label and hide it
+                    errorLabel.textContent = '';
+                    errorLabel.style.display = 'none';
+					
+					// Show success label and set its text
+                    successLabel.textContent = 'Data refreshed successfully.';
+                    successLabel.style.display = 'block';
+					
+                    // Get the table body element
+                    const tableBody = document.querySelector('#productTable tbody');
+                    tableBody.innerHTML = ''; // Clear previous rows
+
+                    // Iterate through the API response and create table rows
+                    data.forEach(product => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `<td>${product.type}</td>
+							<td><a href="${product.uri}" target="_blank">${product.name}</a></td>
+							<td>${product.volume}</td>
+							<td>${product.percent}</td>
+							<td>${product.price}</td>
+							<td>${product.totalAlcoholContent}</td>
+							<td>${product.volumeByPrice}</td>`;
+                        tableBody.appendChild(row);
+                    });
+
+					// Hide the success label after a specified duration
+					hideSuccessLabel();
+
+                    // Show the table when the data response is received
+                    showTable();
+					
+					// Initialize DataTable
+					initializeDataTable();
+					
+					// Hide the loading spinner when the data response is received
+					hideLoadingSpinner();
+                })
+                .catch(error => {
+                    // Display an error message and hide the table
+                    errorLabel.textContent = 'Error fetching data from the API.';
+                    errorLabel.style.display = 'block';
+                    productTable.style.display = 'none';
+					successLabel.style.display = 'none';
+					
+					// Hide the loading spinner when there's an error
+					hideLoadingSpinner();
+					
+					// Hide the table when there's an error
+					hideTable();
+					
+                    console.error('Error:', error);
+                });
+				
+        });
+		
+		// Initialize DataTable when the page loads
+		initializeDataTable();
+		
+		// Function to disable the product dropdown when "TheBeerStore" is selected as the company
+        document.getElementById('company').addEventListener('change', function () {
+            const selectedCompany = this.value;
+            const productTypeDropdown = document.getElementById('productType');
+            if (selectedCompany === 'thebeerstore') {
+                productTypeDropdown.disabled = true;
+            } else {
+                productTypeDropdown.disabled = false;
+				populateProductTypes();
+            }
+			populateStores();
+        });
+    </script>
+</body>
+</html>

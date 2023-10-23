@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+	xmlns:apikit-soap="http://www.mulesoft.org/schema/mule/apikit-soap" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/apikit-soap http://www.mulesoft.org/schema/mule/apikit-soap/current/mule-apikit-soap.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="ad6bfb78-ba9e-4a26-a768-cf18c7fbd614" >
+		<http:request-connection protocol="HTTPS" host="platform.cloud.coveo.com" />
+	</http:request-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="88d9cc60-8dd6-4799-9802-86f18992b7ec" file="config.yaml" />
+	<http:request-config name="LCBO_Stores_HTTP_Request_config" doc:name="HTTP Request configuration" doc:id="d984c928-2da2-4b3a-8bfe-285abad1ee95" >
+		<http:request-connection protocol="HTTPS" host="www.lcbo.com" />
+	</http:request-config>
+	<sub-flow name="get-lcbo-data-by-store-and-type" doc:id="edb80148-09d5-4aa7-b2a1-cff199569e7f" >
+		<logger level="INFO" doc:name="Log Msg" doc:id="6c987674-5075-498d-843a-9ad67eae5f8d" message='#["Fetching : " ++ vars.productType.name]' />
+		<ee:transform doc:name="Set Request Data" doc:id="93eb7050-af9f-41bf-ae0f-2408c2608ec0">
+			<ee:message>
+				<ee:set-payload resource="lcbo/dwl/request.dwl" />
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Init Request to LCBO" doc:id="1d115ef0-76e6-40e9-80ec-7b727d83b22a" config-ref="HTTP_Request_configuration" path="/rest/search/v2?organizationId=lcboproductionx2kwygnc">
+			<http:body><![CDATA[#[payload.body]]]></http:body>
+			<http:headers><![CDATA[#[payload.headers]]]></http:headers>
+			<http:query-params><![CDATA[#[payload.queryParams]]]></http:query-params>
+		</http:request>
+		<logger level="INFO" doc:name="Log product count" doc:id="42d352d2-af12-4ba6-96d1-8a17e64e695b" message='#[output text/plain&#10;---&#10;"Fetched : " ++ vars.productType.name ++ ", Total Results: " ++ payload.totalCount]'/>
+		<ee:transform doc:name="Map Response" doc:id="f1e45993-e261-4758-afde-3a473e1c0176">
+					<ee:message>
+					</ee:message>
+					<ee:variables>
+				<ee:set-variable resource="lcbo/dwl/response.dwl" variableName="resp" />
+					</ee:variables>
+				</ee:transform>
+		<choice doc:name="Choice" doc:id="d1be5992-497e-4f46-ba26-283516d44ebf">
+			<when expression="#[payload.totalCount &gt; Mule::p('lcbo.limit')]">
+				<ee:transform doc:name="Set Ranges" doc:id="4d195f61-3d6f-4e96-b2de-744c9a2edd7b">
+				<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var limit = Mule::p('lcbo.limit')
+---
+1 to (payload.totalCount/limit)]]></ee:set-payload>
+				</ee:message>
+			<ee:variables>
+			</ee:variables>
+			</ee:transform>
+				<parallel-foreach doc:name="Parallel For Each" doc:id="16fb7ed4-7997-42cf-b182-0092c99437b0" collection="#[payload]" target="pageResults">
+					<logger level="INFO" doc:name="Log Msg" doc:id="448997c5-7e5c-422a-b387-5d071d1e747d" message='#["Page : " ++ payload]' />
+					<ee:transform doc:name="Set Request Data" doc:id="ebbde38e-4aac-4125-bcb9-fbfaede7818a">
+				<ee:message>
+							<ee:set-payload resource="lcbo/dwl/request.dwl" />
+				
+</ee:message>
+			</ee:transform>
+			<http:request method="POST" doc:name="Request to LCBO" doc:id="1c51b8d8-2aa7-4a72-b3f3-63309b82f881" config-ref="HTTP_Request_configuration" path="/rest/search/v2?organizationId=lcboproductionx2kwygnc">
+			<http:body><![CDATA[#[payload.body]]]></http:body>
+			<http:headers><![CDATA[#[payload.headers]]]></http:headers>
+			<http:query-params><![CDATA[#[payload.queryParams]]]></http:query-params>
+		</http:request>
+			<ee:transform doc:name="Map Response" doc:id="d5acc7b9-3a50-4de8-aef4-c314569f60d0">
+			<ee:message>
+							<ee:set-payload resource="lcbo/dwl/response.dwl" />
+			
+</ee:message>
+		</ee:transform>
+				</parallel-foreach>
+				<ee:transform doc:name="Aggregate Response" doc:id="00d32c1e-b8f5-4d8b-afc1-8e66024bd391">
+				<ee:message>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="resp"><![CDATA[%dw 2.0
+output application/json
+---
+vars.pageResults.payload]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			</when>
+		</choice>
+		<ee:transform doc:name="Set final Response" doc:id="93cfa9aa-4c19-4ab7-ade6-73d6105150d2" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+vars.resp]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<flow name="get-lcbo-results-main" doc:id="e230c594-444a-47cc-919b-c95ff551317d" >
+		<ee:transform doc:name="Set product types and store id" doc:id="194f77b7-930f-454d-95cd-902faddcc00a" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="storeId" ><![CDATA[%dw 2.0
+output application/json
+---
+attributes.queryParams."store_id" default "691"]]></ee:set-variable>
+				<ee:set-variable variableName="response" ><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-variable>
+				<ee:set-variable variableName="maxPrice" ><![CDATA[%dw 2.0
+output application/json
+---
+attributes.queryParams."max_price"]]></ee:set-variable>
+				<ee:set-variable variableName="productId" ><![CDATA[%dw 2.0
+output application/json
+---
+attributes.queryParams."product_id"]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="get-products" doc:id="9abb565b-0573-4cf3-bb81-db36ff4f7fbe" name="get-lcbo-products"/>
+		<parallel-foreach doc:name="Parallel For Each" doc:id="c29ee5d2-d0ba-4fb1-8490-f7816de68a09" collection="#[payload]" target="results">
+			<ee:transform doc:name="Set required vars" doc:id="9b3abf19-7c75-4286-846a-18d61cdd7dd3">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="productType"><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+			<flow-ref doc:name="get-lcbo-data-by-store-and-type" doc:id="04007d9d-104c-433a-8704-9abe987c295e" name="get-lcbo-data-by-store-and-type" />
+		</parallel-foreach>
+		<ee:transform doc:name="Aggregate Response" doc:id="dc4741bd-b7ad-4fc1-9eab-7a9a751c7ff8">
+				<ee:message>
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+flatten(vars.results.payload) orderBy (-$.volumeByPrice)]]></ee:set-payload>
+				</ee:message>
+				<ee:variables>
+				</ee:variables>
+			</ee:transform>
+	</flow>
+	<flow name="get-lcbo-stores" doc:id="c6c57fc1-f894-4692-b226-d1ee3450e94d" >
+		<ee:transform doc:name="Set Request Data" doc:id="3e3ff828-63bc-4099-ac84-ba7c9e5546d8" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	headers: {
+		"X-Requested-With": "XMLHttpRequest",
+		"Content-Type": "application/x-www-form-urlencoded"
+	},
+	"body": {
+		"lat": attributes.queryParams.latitude default "43.3925309",
+		"lng": attributes.queryParams.longitude default "-80.4086566",
+		"inventoryFilter": "false",
+		"pdpCheck": "true",
+		"favouriteFilter": "false",
+		"radius": "5000",
+		"sku": "0",
+		"product": "0",
+		"category": "0",
+		"sortByDistance": "true"
+	},
+	"queryParams": {}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Request to LCBO" doc:id="9589648a-dd4d-4617-babe-c0a1c04a8a18" config-ref="LCBO_Stores_HTTP_Request_config" path="/en/amlocator/index/ajax/" >
+			<http:body ><![CDATA[#[%dw 2.0
+output application/x-www-form-urlencoded
+---
+payload.body]]]></http:body>
+			<http:headers ><![CDATA[#[payload.headers]]]></http:headers>
+			<http:query-params ><![CDATA[#[payload.queryParams]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="Read response as JSON" doc:id="adcfe1cf-a93b-4971-a732-24cdc2d2858f">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="93ffb026-a59f-4bfe-8ed5-bd0a1e74226a" message="#[payload]"/>
+		<ee:transform doc:name="Map response" doc:id="e1377c4e-2e3b-40e8-85f5-10def4e2c616" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+read(payload, "application/json").items map ({
+    "id": $.stloc,
+    "name": trim(((($.popup_html splitBy("amlocator-name\">"))[1] splitBy ("</div"))[0] splitBy (">"))[1] replace (/address 2:|<br>|<\/span>|<\/a/) with ""),
+    "location": trim((($.popup_html splitBy("amlocator-info-address\">"))[1] splitBy ("</div"))[0] replace (/address 2:|<br>|<\/span>/) with "")
+})]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="get-lcbo-products" doc:id="8c9bc032-3796-4774-b48e-5ffd876b1aa1" >
+		<ee:transform doc:name="Set Response" doc:id="6c918ffe-80f6-4145-92ac-5ae890482793">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var productId = attributes.queryParams."product_id" default vars.productId
+var productList = readUrl("classpath://lcbo/products.json", "application/json")
+---
+if(isEmpty(productId) or productId ~= "all")
+	productList
+else
+	productList filter ($.id == productId)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

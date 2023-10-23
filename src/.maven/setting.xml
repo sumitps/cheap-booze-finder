@@ -1,0 +1,34 @@
+<settings>
+   <servers>
+      <server>
+		<id>anypoint-exchange-v3</id>
+		<username>~~~Client~~~</username>
+		<password>${env.CONTD_APP_CLIENT_ID}~?~${env.CONTD_APP_CLIENT_SECRET}</password>
+      </server>
+   </servers>
+   <pluginGroups>
+      <pluginGroup>org.mule.tools</pluginGroup>
+   </pluginGroups>
+   <profiles>
+      <profile>
+         <id>Mule</id>
+         <activation>
+            <activeByDefault>true</activeByDefault>
+         </activation>
+         <repositories>
+            <repository>
+               <id>MuleRepository</id>
+               <name>MuleRepository</name>
+               <url>https://repository.mulesoft.org/nexus-ee/content/repositories/releases-ee/</url>
+               <layout>default</layout>
+               <releases>
+                  <enabled>true</enabled>
+               </releases>
+               <snapshots>
+                  <enabled>true</enabled>
+               </snapshots>
+            </repository>
+         </repositories>
+      </profile>
+   </profiles>
+</settings>

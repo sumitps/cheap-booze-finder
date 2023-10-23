@@ -1,0 +1,87 @@
+[
+  {
+    "id": "LCBO1000",
+    "name": "Products|Spirits|Cognac & Brandy",
+    "displayName": "Cognac & Brandy"
+  },
+  {
+    "id": "LCBO1001",
+    "name": "Products|Spirits|Whisky",
+    "displayName": "Whisky"
+  },
+  {
+    "id": "LCBO1002",
+    "name": "Products|Spirits|Liqueur",
+    "displayName": "Liqueur"
+  },
+  {
+    "id": "LCBO1003",
+    "name": "Products|Spirits|Tequila",
+    "displayName": "Tequila"
+  },
+  {
+    "id": "LCBO1004",
+    "name": "Products|Spirits|Vodka",
+    "displayName": "Vodka"
+  },
+  {
+    "id": "LCBO1005",
+    "name": "Products|Spirits|Rum",
+    "displayName": "Rum"
+  },
+  {
+    "id": "LCBO1006",
+    "name": "Products|Spirits|Gin",
+    "displayName": "Gin"
+  },
+  {
+    "id": "LCBO1007",
+    "name": "Products|Spirits|Grappa",
+    "displayName": "Grappa"
+  },
+  {
+    "id": "LCBO1008",
+    "name": "Products|Spirits|Baijiu",
+    "displayName": "Baijiu"
+  },
+  {
+    "id": "LCBO1009",
+    "name": "Products|Spirits|Soju",
+    "displayName": "Soju"
+  },
+  {
+    "id": "LCBO1010",
+    "name": "Products|Beer & Cider|Lager",
+    "displayName": "Lager"
+  },
+  {
+    "id": "LCBO1011",
+    "name": "Products|Beer & Cider|Ale",
+    "displayName": "Ale"
+  },
+  {
+    "id": "LCBO1012",
+    "name": "Products|Beer & Cider|Cider",
+    "displayName": "Cider"
+  },
+  {
+    "id": "LCBO1013",
+    "name": "Products|Coolers|Seltzers And Sodas",
+    "displayName": "Seltzers And Sodas"
+  },
+  {
+    "id": "LCBO1014",
+    "name": "Products|Coolers|Coolers & Cocktails",
+    "displayName": "Coolers & Cocktails"
+  },
+  {
+    "id": "LCBO1015",
+    "name": "Products|Spirits|Premixed Cocktails",
+    "displayName": "Premixed Cocktails"
+  },
+  {
+    "id": "LCBO1016",
+    "name": "Products|Spirits|Gifts And Samplers",
+    "displayName": "Gifts And Samplers"
+  }
+]

@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:request-config name="Beerstore_HTTP_Config" doc:name="HTTP Request configuration" doc:id="4d5562c6-e415-4df2-b3e8-12e0d4cce6cd" >
+		<http:request-connection protocol="HTTPS" host="www.thebeerstore.ca" />
+		<http:default-headers >
+			<http:default-header key="Content-Type" value="application/x-www-form-urlencoded; charset=UTF-8" />
+		</http:default-headers>
+	</http:request-config>
+	<flow name="beerstore-main" doc:id="0ff213b3-c772-476a-bbf0-d1ddfa39bea8" >
+		<ee:transform doc:name="Set store if and initialize response var" doc:id="2d9a8a6b-9571-4515-8daf-577e9a311f7f" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="response" ><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-variable>
+				<ee:set-variable variableName="storeId" ><![CDATA[%dw 2.0
+output application/json
+---
+attributes.queryParams.store_id default "4156"]]></ee:set-variable>
+				<ee:set-variable variableName="maxPrice" ><![CDATA[%dw 2.0
+output application/json
+---
+attributes.queryParams."max_price"]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Set request body" doc:id="b7f410e3-4b5f-4d74-b153-bcbd8135c4ad">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"": null,
+	"action": "beer_filter_ajax",
+	"in_stock": "on",
+	"searchval": "",
+	"store_id": vars.storeId,
+	"page_slug": "beers",
+	"page": 1
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Request to Beer Store" doc:id="0347c81b-8eaa-4f9c-b700-957c18f2fc16" config-ref="Beerstore_HTTP_Config" path="/wp-admin/admin-ajax.php">
+			<http:body><![CDATA[#[%dw 2.0
+output application/x-www-form-urlencoded
+---
+payload]]]></http:body>
+		</http:request>
+		<ee:transform doc:name="Set Ranges" doc:id="51668519-3579-4c37-9799-0e3f0d1ed92e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+1 to payload.pagination.total_pages]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<parallel-foreach doc:name="Parallel For Each" doc:id="972bb341-29d2-4aa8-b33f-72abd3511c0a" collection="#[payload]" target="results">
+			<logger level="INFO" doc:name="Log Page Number" doc:id="ce9fb122-9bac-4898-a791-7fae1df310a8" message='#[output text/plain --- "Fetching from TheBeerStore, Page:" ++ payload]' />
+			<ee:transform doc:name="Set request body" doc:id="88452bd5-0c1b-4d41-be6a-2af4385781c7">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"": null,
+	"action": "beer_filter_ajax",
+	"in_stock": "on",
+	"searchval": "",
+	"store_id": vars.storeId,
+	"page_slug": "beers",
+	"page": payload
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			<http:request method="POST" doc:name="Request to Beer Store" doc:id="bb68d350-bac8-4f00-b898-ff70052b14a8" config-ref="Beerstore_HTTP_Config" path="/wp-admin/admin-ajax.php">
+				<http:body><![CDATA[#[%dw 2.0
+output application/x-www-form-urlencoded
+---
+payload]]]></http:body>
+			</http:request>
+			<ee:transform doc:name="Map response" doc:id="1c1c2204-1890-4d3a-8046-bf35cd80081a">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+import capitalize from dw::core::Strings
+
+output application/json
+---
+flatten(payload.data pluck (
+    ($.variants filter ((p)-> p.inventory_level !=0)) map ((item) -> do{
+        var price = if(!isEmpty(item.sale_price) and item.sale_price != 0)
+            item.sale_price else item.price
+        var percent = ($.custom_fields filter ($.name == "ABV"))[0].value as Number
+        var volume = do{
+                var parts = item.option_values.label[0] splitBy (" X ")
+                var quantity = parts[0]
+                var unitVolume = (parts[1] scan(/[\d]+/))[0][0]
+                ---
+                quantity * unitVolume
+            }
+        ---
+        {
+            "type": ($.custom_fields filter ($.name == "Type"))[0].value,
+            "name": capitalize($.name),
+            "uri": "https://www.thebeerstore.ca/beers" ++ ((($.custom_url.url splitBy("-"))[0 to (sizeOf($.custom_url.url splitBy("-")) - 2)]) joinBy ('-')), 
+            "volume": volume,
+            "percent": percent,
+            "price": price,
+            "totalAlcoholContent": volume * percent / 100,
+            "volumeByPrice": ((volume * percent / 100) / price) as String {format:"#.###"} as Number
+        }
+    })
+))]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</parallel-foreach>
+		<ee:transform doc:name="Aggregate response" doc:id="07c34093-6741-49bb-8128-2dd56a8446f9">
+				<ee:message>
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var results = flatten(vars.results.payload)
+---
+if(!isEmpty(vars.maxPrice))
+	(results filter($.price <= ceil(vars.maxPrice))) orderBy (-$.volumeByPrice)
+else
+	results orderBy (-$.volumeByPrice)]]></ee:set-payload>
+				</ee:message>
+				<ee:variables>
+				</ee:variables>
+			</ee:transform>
+<!-- [STUDIO:"Set final response"]		<ee:transform doc:name="Set final response" doc:id="b49d0c4f-4bac-4414-8297-29a0c323b0fe" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+&#45;&#45;-
+if(!isEmpty(vars.maxPrice))
+	(vars.response filter($.price <= ceil(vars.maxPrice))) orderBy (-$.volumeByPrice)
+else
+	vars.response orderBy (-$.volumeByPrice)&#93;&#93;></ee:set-payload>
+			</ee:message>
+		</ee:transform> [STUDIO] -->
+	</flow>
+	<flow name="get-beerstore-stores" doc:id="26c106fe-811d-4ee3-acc3-0ba2a5ba2429" >
+		<ee:transform doc:name="Set request body" doc:id="b462e673-27e0-4fd8-88d2-c45f0e7ce007" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"action": "current_store_get_all_markers",
+	"sid": "",
+	"pageno": "1",
+	"postcode_city": "",
+	"store_id": "",
+	"locateme": "",
+	"current_lat": attributes.queryParams.latitude default "43.3925309",
+	"current_long": attributes.queryParams.longitude default "-80.4086566",
+	"page_slug": "locations"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Request to Beer Store" doc:id="bd5c66c9-8c7f-4f76-8642-0004d19b99a0" config-ref="Beerstore_HTTP_Config" path="/wp-admin/admin-ajax.php">
+			<http:body><![CDATA[#[%dw 2.0
+output application/x-www-form-urlencoded
+---
+payload]]]></http:body>
+		</http:request>
+		<ee:transform doc:name="Read response as JSON" doc:id="c455c4dc-f869-4630-ba2d-bd8b89ddef94" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Map final response" doc:id="5f11c463-88d5-44f5-b66c-3a5793c6a393" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+read(payload, "application/json") map ((item, index) -> {
+	"id": item.store_id,
+	"name": item.store_name,
+	"location": item.address
+})]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
