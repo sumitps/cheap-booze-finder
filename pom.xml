@@ -4,18 +4,17 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.sumsum</groupId>
-	<artifactId>cheap-booze-finder</artifactId>
-	<version>1.0.0</version>
+	<groupId>17330a69-5fb7-45a4-809f-2b2b0ec9bbee</groupId>
+	<artifactId>find-cheap-booze</artifactId>
+	<version>1.0.1</version>
 	<packaging>mule-application</packaging>
 
-	<name>cheap-booze-finder</name>
+	<name>find-cheap-booze</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-		<app.runtime>4.4.0-20230320</app.runtime>
+		<app.runtime>4.4.0</app.runtime>
 		<mule.maven.plugin.version>3.8.2</mule.maven.plugin.version>
 	</properties>
 
@@ -33,6 +32,27 @@
 				<extensions>true</extensions>
 				<configuration>
 					<classifier>mule-application</classifier>
+					<cloudhub2Deployment>
+						<uri>https://anypoint.mulesoft.com </uri>
+						<provider>MC</provider>
+						<environment>Sandbox</environment>
+						<target>Cloudhub-US-East-2</target>
+						<muleVersion>4.4.0</muleVersion>
+						<server>anypoint-exchange-v3</server>
+						<applicationName>${project.name}</applicationName>
+						<replicas>4</replicas>
+						<vCores>0.1</vCores>
+						<deploymentSettings>
+							<clustered>true</clustered>
+						</deploymentSettings>
+						<integrations>
+							<services>
+								<objectStoreV2>
+									<enabled>true</enabled>
+								</objectStoreV2>
+							</services>
+						</integrations>
+					</cloudhub2Deployment>
 				</configuration>
 			</plugin>
 		</plugins>
@@ -68,6 +88,14 @@
 		</repository>
 	</repositories>
 
+	<distributionManagement>
+		<repository>
+			<id>anypoint-exchange-v3</id>
+			<name>Exchange Repository</name>
+			<url>https://maven.anypoint.mulesoft.com/api/v3/organizations/${project.groupId}/maven</url>
+			<layout>default</layout>
+		</repository>
+	</distributionManagement>
 
 	<pluginRepositories>
 		<pluginRepository>
