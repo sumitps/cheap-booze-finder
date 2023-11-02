@@ -76,7 +76,16 @@
 	</dependencies>
 
 	<repositories>
-		
+		<repository>
+			<id>sumitpshinde</id>
+			<url>https://pkgs.dev.azure.com/sumitpshinde/_packaging/sumitpshinde/maven/v1</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
 		<repository>
 			<id>anypoint-exchange-v3</id>
 			<name>Anypoint Exchange</name>
