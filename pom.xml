@@ -39,6 +39,8 @@
 						<target>Cloudhub-US-East-2</target>
 						<muleVersion>4.4.0</muleVersion>
 						<server>anypoint-exchange-v3</server>
+						<username>${anypoint.username}</username>
+						<password>${anypoint.password}</password>
 						<applicationName>${project.name}</applicationName>
 						<replicas>4</replicas>
 						<vCores>0.1</vCores>
@@ -74,16 +76,7 @@
 	</dependencies>
 
 	<repositories>
-		<repository>
-			<id>sumitpshinde</id>
-			<url>https://pkgs.dev.azure.com/sumitpshinde/_packaging/sumitpshinde/maven/v1</url>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-		</repository>
+		
 		<repository>
 			<id>anypoint-exchange-v3</id>
 			<name>Anypoint Exchange</name>
