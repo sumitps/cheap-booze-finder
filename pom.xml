@@ -4,9 +4,9 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>17330a69-5fb7-45a4-809f-2b2b0ec9bbee</groupId>
+	<groupId>a1903096-3341-48ff-b1fa-d03f95d0f308</groupId>
 	<artifactId>find-cheap-booze</artifactId>
-	<version>1.0.9</version>
+	<version>1.0.0</version>
 	<packaging>mule-application</packaging>
 
 	<name>find-cheap-booze</name>
