@@ -4,9 +4,9 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>a1903096-3341-48ff-b1fa-d03f95d0f308</groupId>
+	<groupId>#{anypoint.groupId}#</groupId>
 	<artifactId>find-cheap-booze</artifactId>
-	<version>1.0.3</version>
+	<version>1.0.4</version>
 	<packaging>mule-application</packaging>
 
 	<name>find-cheap-booze</name>
@@ -40,8 +40,6 @@
 						<muleVersion>4.4.0</muleVersion>
 						<server>anypoint-exchange-v3</server>
 						<applicationName>${project.name}</applicationName>
-						<username>${anypoint.username}</username>
-						<password>${anypoint.password}</password>
 						<replicas>4</replicas>
 						<vCores>0.1</vCores>
 						<deploymentSettings>
