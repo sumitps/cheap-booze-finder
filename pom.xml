@@ -41,7 +41,7 @@
 						<server>anypoint-exchange-v3</server>
 						<applicationName>${project.name}</applicationName>
 						<replicas>4</replicas>
-						<vCores>0.1</vCores>
+						<vCores>0.2</vCores>
 						<deploymentSettings>
 							<clustered>true</clustered>
 						</deploymentSettings>
