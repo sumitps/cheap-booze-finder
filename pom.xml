@@ -40,8 +40,6 @@
 						<muleVersion>4.4.0</muleVersion>
 						<server>anypoint-exchange-v3</server>
 						<applicationName>${project.name}</applicationName>
-						<username>${anypoint.username}</username>
-						<password>${anypoint.password}</password>
 						<replicas>4</replicas>
 						<vCores>0.1</vCores>
 						<deploymentSettings>
@@ -94,7 +92,7 @@
 		<repository>
 			<id>anypoint-exchange-v3</id>
 			<name>Exchange Repository</name>
-			<url>https://maven.anypoint.mulesoft.com/api/v3/organizations/${project.groupId}/maven</url>
+			<url>https://maven.anypoint.mulesoft.com/api/v3/organizations/#{anypoint.groupId}#/maven</url>
 			<layout>default</layout>
 		</repository>
 	</distributionManagement>
